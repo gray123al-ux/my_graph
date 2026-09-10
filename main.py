@@ -1,4 +1,4 @@
-```python
+
 # 영화 데이터 그래프 도감 1 - 시간
 
 import streamlit as st
@@ -405,5 +405,5 @@ st.divider()
 st.header("6. 다음 그래프")
 
 st.info("앞으로 새로운 그래프를 이 구역에 추가합니다.")
-```
+
 
