@@ -1,7 +1,7 @@
 # 영화 데이터 그래프 도감 1 - 시간
 import streamlit as st
 import pandas as pd
-import plotly.express as px
+import plotly as px
 
 st.set_page_config(page_title="영화 데이터 그래프 도감 1 - 시간", layout="wide")
 st.title("영화 데이터 그래프 도감 1 - 시간")
