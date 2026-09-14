@@ -5,11 +5,6 @@ import streamlit as st
 import pandas as pd
 import plotly.express as px
 
-
-# =========================================================
-# 기본 설정
-# =========================================================
-
 st.set_page_config(
     page_title="영화 데이터 그래프 도감 1 - 시간",
     page_icon="🎬",
@@ -17,15 +12,10 @@ st.set_page_config(
 )
 
 st.title("🎬 영화 데이터 그래프 도감 1 - 시간")
-st.markdown(
+st.write(
     "1년치 일별 박스오피스 데이터를 이용해 "
     "영화의 흥행 흐름을 시간에 따라 살펴봅니다."
 )
-
-
-# =========================================================
-# 데이터 불러오기
-# =========================================================
 
 DATA_URL = (
     "https://raw.githubusercontent.com/greatsong/modudata/"
@@ -33,46 +23,30 @@ DATA_URL = (
 )
 
 
+# =========================================================
+# 데이터 불러오기
+# =========================================================
+
 @st.cache_data
 def load_data():
-    # 1년치 일별 박스오피스 10위권 기록
+    # 1년치(365일) 일별 박스오피스 10위권 기록을 불러옵니다.
     df = pd.read_csv(DATA_URL)
 
-    # 날짜를 실제 날짜 형식으로 변환
+    # 여덟 자리 숫자로 된 날짜를 진짜 날짜로 변환합니다.
     df["날짜"] = pd.to_datetime(
         df["날짜"].astype(str),
         format="%Y%m%d",
         errors="coerce"
     )
 
-    # 숫자 데이터는 확실하게 숫자로 변환
-    numeric_columns = [
-        "순위",
-        "일관객",
-        "누적관객",
-        "스크린수",
-        "상영횟수"
-    ]
-
-    for column in numeric_columns:
-        df[column] = pd.to_numeric(
-            df[column],
-            errors="coerce"
-        )
-
-    # 날짜순으로 정렬
-    df = df.sort_values("날짜").reset_index(drop=True)
+    # 숫자 열을 숫자형으로 변환합니다.
+    for column in ["순위", "일관객", "누적관객", "스크린수", "상영횟수"]:
+        df[column] = pd.to_numeric(df[column], errors="coerce")
 
     return df
 
 
-try:
-    df = load_data()
-
-except Exception as e:
-    st.error("데이터를 불러오지 못했습니다.")
-    st.exception(e)
-    st.stop()
+df = load_data()
 
 
 # =========================================================
@@ -99,6 +73,7 @@ with col3:
         f"{len(df):,}개"
     )
 
+
 st.divider()
 
 
@@ -113,8 +88,7 @@ st.write(
     "선 그래프로 확인할 수 있습니다."
 )
 
-
-# 영화 목록
+# 드롭다운으로 영화를 고릅니다.
 movie_list = (
     df["영화명"]
     .dropna()
@@ -128,17 +102,15 @@ movie = st.selectbox(
     movie_list
 )
 
-
-# 선택한 영화의 데이터
+# 선택한 영화 데이터
 one = (
     df[df["영화명"] == movie]
     .sort_values("날짜")
     .copy()
 )
 
-
 # 선 그래프
-fig = px.line(
+fig1 = px.line(
     one,
     x="날짜",
     y="일관객",
@@ -149,7 +121,7 @@ fig = px.line(
     }
 )
 
-fig.update_traces(
+fig1.update_traces(
     hovertemplate=(
         "날짜 %{x|%Y-%m-%d}"
         "<br>관객 %{y:,.0f}명"
@@ -159,26 +131,19 @@ fig.update_traces(
     marker_size=7
 )
 
-fig.update_layout(
+fig1.update_layout(
     height=500,
-    margin=dict(l=20, r=20, t=30, b=20),
     hovermode="x unified",
-    xaxis=dict(
-        showgrid=True
-    ),
-    yaxis=dict(
-        title="일관객 (명)",
-        tickformat=","
-    )
+    xaxis_title="날짜",
+    yaxis_title="일관객 (명)",
+    yaxis_tickformat=","
 )
 
 st.plotly_chart(
-    fig,
+    fig1,
     use_container_width=True
 )
 
-
-# 그래프로 알 수 있는 것
 st.info(
     "💡 이 그래프로 알 수 있는 것: "
     "영화의 날짜별 관객 수가 언제 증가하고 감소했는지 확인할 수 있습니다."
@@ -186,41 +151,107 @@ st.info(
 
 
 # =========================================================
-# 그래프 2
+# 그래프 2. 기간 일관객 합계 TOP 5 영화
 # =========================================================
 
 st.divider()
 
-st.header("2. 그래프 2")
-st.caption("다음 그래프를 이 영역에 추가할 수 있습니다.")
+st.header("2. 기간 일관객 합계 TOP 5")
+
+st.write(
+    "이 기간 동안 기록된 일관객을 영화별로 모두 더해 "
+    "관객 합계가 가장 큰 5편의 흥행 흐름을 비교합니다."
+)
 
 
-# =========================================================
-# 그래프 3
-# =========================================================
+# ---------------------------------------------------------
+# 영화별 기간 일관객 합계 계산
+# ---------------------------------------------------------
 
-st.divider()
+movie_total = (
+    df.groupby("영화명", as_index=False)["일관객"]
+    .sum()
+    .sort_values("일관객", ascending=False)
+)
 
-st.header("3. 그래프 3")
-st.caption("다음 그래프를 이 영역에 추가할 수 있습니다.")
-
-
-# =========================================================
-# 그래프 4
-# =========================================================
-
-st.divider()
-
-st.header("4. 그래프 4")
-st.caption("다음 그래프를 이 영역에 추가할 수 있습니다.")
+# 상위 5편
+top5_movies = movie_total.head(5)["영화명"].tolist()
 
 
-# =========================================================
-# 그래프 5
-# =========================================================
+# ---------------------------------------------------------
+# TOP 5 영화의 날짜별 데이터만 추출
+# ---------------------------------------------------------
 
-st.divider()
+top5_df = df[
+    df["영화명"].isin(top5_movies)
+].copy()
 
-st.header("5. 그래프 5")
-st.caption("다음 그래프를 이 영역에 추가할 수 있습니다.")
+top5_df = top5_df.sort_values(["날짜", "영화명"])
+
+
+# ---------------------------------------------------------
+# 여러 영화를 하나의 선 그래프로 표시
+# ---------------------------------------------------------
+
+fig2 = px.line(
+    top5_df,
+    x="날짜",
+    y="일관객",
+    color="영화명",
+    markers=True,
+    labels={
+        "날짜": "날짜",
+        "일관객": "일관객 수",
+        "영화명": "영화"
+    }
+)
+
+fig2.update_traces(
+    hovertemplate=(
+        "영화: %{fullData.name}"
+        "<br>날짜: %{x|%Y-%m-%d}"
+        "<br>관객: %{y:,.0f}명"
+        "<extra></extra>"
+    )
+)
+
+fig2.update_layout(
+    height=600,
+    hovermode="closest",
+    xaxis_title="날짜",
+    yaxis_title="일관객 (명)",
+    yaxis_tickformat=",",
+    legend_title="영화",
+    legend=dict(
+        itemclick="toggle",
+        itemdoubleclick="toggleothers"
+    )
+)
+
+st.plotly_chart(
+    fig2,
+    use_container_width=True
+)
+
+
+# ---------------------------------------------------------
+# TOP 5 영화의 기간 합계 표시
+# ---------------------------------------------------------
+
+st.subheader("🏆 기간 일관객 합계")
+
+for rank, row in enumerate(movie_total.head(5).itertuples(), start=1):
+    st.write(
+        f"**{rank}위. {row.영화명}** — "
+        f"{row.일관객:,.0f}명"
+    )
+
+
+st.info(
+    "💡 이 그래프로 알 수 있는 것: "
+    "기간 전체에서 관객을 많이 모은 영화 5편의 날짜별 흥행 흐름을 한눈에 비교할 수 있습니다."
+)
+
+
+# =============
 
